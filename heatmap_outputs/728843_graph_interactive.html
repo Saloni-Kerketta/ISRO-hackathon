@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Route Resilience -- Interactive Criticality Map</title>
+<style>
+  body { font-family: -apple-system, sans-serif; margin: 0; padding: 24px; background: #fafafa; }
+  h1 { font-size: 18px; font-weight: 600; margin: 0 0 4px; }
+  p.sub { font-size: 13px; color: #666; margin: 0 0 20px; }
+  .layout { display: flex; gap: 24px; align-items: flex-start; flex-wrap: wrap; }
+  svg { background: white; border: 1px solid #ddd; border-radius: 8px; }
+  .panel { flex: 1; min-width: 220px; display: flex; flex-direction: column; gap: 10px; }
+  .card { background: white; border: 1px solid #ddd; border-radius: 8px; padding: 12px; }
+  .card .label { font-size: 12px; color: #777; }
+  .card .value { font-size: 20px; font-weight: 600; margin-top: 2px; }
+  button { padding: 8px 14px; border-radius: 6px; border: 1px solid #ccc; background: white; cursor: pointer; }
+  circle { cursor: pointer; }
+</style>
+</head>
+<body>
+  <h1>Intersection Criticality Heatmap</h1>
+  <p class="sub">Click any intersection to see its centrality score and the Resilience Index if it fails.</p>
+  <div class="layout">
+    <svg id="mapSvg" viewBox="36 -231 504 261" width="500" height="500"></svg>
+    <div class="panel">
+      <div class="card"><div class="label">Selected node</div><div class="value" id="selNode">none</div></div>
+      <div class="card"><div class="label">Centrality score</div><div class="value" id="selCentrality">-</div></div>
+      <div class="card"><div class="label">Resilience index if removed</div><div class="value" id="selResilience">-</div></div>
+      <button id="resetBtn">Reset</button>
+    </div>
+  </div>
+<script>
+const data = {"nodes": [{"id": "(81, 335)", "x": 335, "y": -81, "centrality": 0.2643, "resilience_if_removed": 0.9259, "disconnected_if_removed": []}, {"id": "(80, 335)", "x": 335, "y": -80, "centrality": 0.3153, "resilience_if_removed": 0.9292, "disconnected_if_removed": ["(23, 395)", "(0, 398)", "(24, 395)", "(1, 332)", "(28, 333)", "(65, 389)", "(24, 394)"]}, {"id": "(81, 336)", "x": 336, "y": -81, "centrality": 0.2793, "resilience_if_removed": 0.9066, "disconnected_if_removed": ["(80, 455)", "(78, 448)", "(74, 355)", "(72, 509)", "(75, 355)", "(74, 356)"]}, {"id": "(82, 335)", "x": 335, "y": -82, "centrality": 0.5045, "resilience_if_removed": 0.8226, "disconnected_if_removed": ["(80, 455)", "(74, 355)", "(81, 336)", "(78, 448)", "(80, 335)", "(81, 335)", "(23, 395)", "(0, 398)", "(72, 509)", "(24, 395)", "(1, 332)", "(28, 333)", "(75, 355)", "(65, 389)", "(74, 356)", "(24, 394)"]}, {"id": "(129, 354)", "x": 354, "y": -129, "centrality": 0.0526, "resilience_if_removed": 0.9617, "disconnected_if_removed": []}, {"id": "(129, 353)", "x": 353, "y": -129, "centrality": 0.0, "resilience_if_removed": 0.989, "disconnected_if_removed": []}, {"id": "(129, 355)", "x": 355, "y": -129, "centrality": 0.1532, "resilience_if_removed": 0.9812, "disconnected_if_removed": ["(129, 353)", "(129, 354)", "(130, 354)"]}, {"id": "(130, 354)", "x": 354, "y": -130, "centrality": 0.0, "resilience_if_removed": 0.983, "disconnected_if_removed": []}, {"id": "(72, 509)", "x": 509, "y": -72, "centrality": 0.0, "resilience_if_removed": 1.0509, "disconnected_if_removed": []}, {"id": "(84, 334)", "x": 334, "y": -84, "centrality": 0.5105, "resilience_if_removed": 0.8257, "disconnected_if_removed": ["(80, 455)", "(74, 355)", "(81, 336)", "(78, 448)", "(24, 394)", "(80, 335)", "(81, 335)", "(23, 395)", "(0, 398)", "(72, 509)", "(24, 395)", "(1, 332)", "(28, 333)", "(75, 355)", "(65, 389)", "(74, 356)", "(82, 335)"]}, {"id": "(85, 333)", "x": 333, "y": -85, "centrality": 0.0, "resilience_if_removed": 0.953, "disconnected_if_removed": []}, {"id": "(85, 334)", "x": 334, "y": -85, "centrality": 0.4865, "resilience_if_removed": 0.9262, "disconnected_if_removed": []}, {"id": "(0, 66)", "x": 66, "y": 0, "centrality": 0.0, "resilience_if_removed": 1.0525, "disconnected_if_removed": []}, {"id": "(36, 128)", "x": 128, "y": -36, "centrality": 0.1066, "resilience_if_removed": 1.0458, "disconnected_if_removed": ["(0, 66)", "(4, 129)"]}, {"id": "(86, 334)", "x": 334, "y": -86, "centrality": 0.5105, "resilience_if_removed": 0.9188, "disconnected_if_removed": ["(4, 129)", "(129, 355)", "(152, 336)", "(125, 267)", "(126, 268)", "(186, 461)", "(129, 354)", "(201, 510)", "(126, 267)", "(0, 66)", "(36, 128)", "(153, 336)", "(129, 353)", "(126, 266)", "(153, 335)", "(129, 256)", "(130, 354)"]}, {"id": "(152, 336)", "x": 336, "y": -152, "centrality": 0.5045, "resilience_if_removed": 0.9574, "disconnected_if_removed": ["(4, 129)", "(129, 355)", "(125, 267)", "(126, 268)", "(186, 461)", "(129, 354)", "(201, 510)", "(126, 267)", "(0, 66)", "(36, 128)", "(153, 336)", "(129, 353)", "(126, 266)", "(153, 335)", "(129, 256)", "(130, 354)"]}, {"id": "(153, 336)", "x": 336, "y": -153, "centrality": 0.2793, "resilience_if_removed": 0.9741, "disconnected_if_removed": ["(129, 355)", "(186, 461)", "(129, 354)", "(201, 510)", "(129, 353)", "(130, 354)"]}, {"id": "(153, 335)", "x": 335, "y": -153, "centrality": 0.3483, "resilience_if_removed": 0.9708, "disconnected_if_removed": ["(4, 129)", "(125, 267)", "(126, 268)", "(126, 267)", "(0, 66)", "(36, 128)", "(126, 266)", "(129, 256)"]}, {"id": "(186, 461)", "x": 461, "y": -186, "centrality": 0.2462, "resilience_if_removed": 1.0378, "disconnected_if_removed": ["(129, 353)", "(129, 354)", "(129, 355)", "(130, 354)", "(201, 510)"]}, {"id": "(126, 266)", "x": 266, "y": -126, "centrality": 0.0541, "resilience_if_removed": 0.9724, "disconnected_if_removed": ["(129, 256)"]}, {"id": "(125, 267)", "x": 267, "y": -125, "centrality": 0.1532, "resilience_if_removed": 0.9704, "disconnected_if_removed": ["(4, 129)", "(0, 66)", "(36, 128)"]}, {"id": "(126, 267)", "x": 267, "y": -126, "centrality": 0.0931, "resilience_if_removed": 0.9568, "disconnected_if_removed": []}, {"id": "(129, 256)", "x": 256, "y": -129, "centrality": 0.0, "resilience_if_removed": 1.0414, "disconnected_if_removed": []}, {"id": "(80, 455)", "x": 455, "y": -80, "centrality": 0.0, "resilience_if_removed": 1.0465, "disconnected_if_removed": []}, {"id": "(78, 448)", "x": 448, "y": -78, "centrality": 0.1066, "resilience_if_removed": 1.0372, "disconnected_if_removed": ["(72, 509)", "(80, 455)"]}, {"id": "(0, 398)", "x": 398, "y": 0, "centrality": 0.0, "resilience_if_removed": 1.0474, "disconnected_if_removed": []}, {"id": "(23, 395)", "x": 395, "y": -23, "centrality": 0.0541, "resilience_if_removed": 0.9921, "disconnected_if_removed": ["(0, 398)"]}, {"id": "(201, 510)", "x": 510, "y": -201, "centrality": 0.0, "resilience_if_removed": 1.0514, "disconnected_if_removed": []}, {"id": "(28, 333)", "x": 333, "y": -28, "centrality": 0.2868, "resilience_if_removed": 1.0172, "disconnected_if_removed": ["(23, 395)", "(0, 398)", "(24, 395)", "(65, 389)", "(24, 394)", "(1, 332)"]}, {"id": "(4, 129)", "x": 129, "y": -4, "centrality": 0.0, "resilience_if_removed": 1.0517, "disconnected_if_removed": []}, {"id": "(1, 332)", "x": 332, "y": -1, "centrality": 0.0, "resilience_if_removed": 1.0475, "disconnected_if_removed": []}, {"id": "(24, 395)", "x": 395, "y": -24, "centrality": 0.0541, "resilience_if_removed": 0.9849, "disconnected_if_removed": ["(65, 389)"]}, {"id": "(24, 394)", "x": 394, "y": -24, "centrality": 0.1982, "resilience_if_removed": 0.9803, "disconnected_if_removed": ["(23, 395)", "(0, 398)", "(65, 389)", "(24, 395)"]}, {"id": "(65, 389)", "x": 389, "y": -65, "centrality": 0.0, "resilience_if_removed": 1.0492, "disconnected_if_removed": []}, {"id": "(75, 355)", "x": 355, "y": -75, "centrality": 0.2402, "resilience_if_removed": 0.9553, "disconnected_if_removed": ["(80, 455)", "(78, 448)", "(74, 355)", "(72, 509)", "(74, 356)"]}, {"id": "(74, 355)", "x": 355, "y": -74, "centrality": 0.0, "resilience_if_removed": 0.9841, "disconnected_if_removed": []}, {"id": "(74, 356)", "x": 356, "y": -74, "centrality": 0.1532, "resilience_if_removed": 0.9797, "disconnected_if_removed": ["(80, 455)", "(78, 448)", "(72, 509)"]}, {"id": "(126, 268)", "x": 268, "y": -126, "centrality": 0.3153, "resilience_if_removed": 0.9599, "disconnected_if_removed": ["(4, 129)", "(125, 267)", "(126, 267)", "(0, 66)", "(36, 128)", "(126, 266)", "(129, 256)"]}], "edges": [{"source": "(81, 335)", "target": "(80, 335)"}, {"source": "(81, 335)", "target": "(81, 336)"}, {"source": "(81, 335)", "target": "(82, 335)"}, {"source": "(80, 335)", "target": "(81, 336)"}, {"source": "(80, 335)", "target": "(28, 333)"}, {"source": "(81, 336)", "target": "(75, 355)"}, {"source": "(81, 336)", "target": "(82, 335)"}, {"source": "(82, 335)", "target": "(84, 334)"}, {"source": "(129, 354)", "target": "(129, 353)"}, {"source": "(129, 354)", "target": "(129, 355)"}, {"source": "(129, 354)", "target": "(130, 354)"}, {"source": "(129, 353)", "target": "(130, 354)"}, {"source": "(129, 355)", "target": "(130, 354)"}, {"source": "(129, 355)", "target": "(186, 461)"}, {"source": "(72, 509)", "target": "(78, 448)"}, {"source": "(84, 334)", "target": "(85, 333)"}, {"source": "(84, 334)", "target": "(85, 334)"}, {"source": "(85, 333)", "target": "(86, 334)"}, {"source": "(85, 333)", "target": "(85, 334)"}, {"source": "(85, 334)", "target": "(86, 334)"}, {"source": "(0, 66)", "target": "(36, 128)"}, {"source": "(36, 128)", "target": "(125, 267)"}, {"source": "(36, 128)", "target": "(4, 129)"}, {"source": "(86, 334)", "target": "(152, 336)"}, {"source": "(152, 336)", "target": "(153, 336)"}, {"source": "(152, 336)", "target": "(153, 335)"}, {"source": "(153, 336)", "target": "(153, 335)"}, {"source": "(153, 336)", "target": "(186, 461)"}, {"source": "(153, 335)", "target": "(126, 268)"}, {"source": "(186, 461)", "target": "(201, 510)"}, {"source": "(126, 266)", "target": "(125, 267)"}, {"source": "(126, 266)", "target": "(126, 267)"}, {"source": "(126, 266)", "target": "(129, 256)"}, {"source": "(125, 267)", "target": "(126, 267)"}, {"source": "(125, 267)", "target": "(126, 268)"}, {"source": "(126, 267)", "target": "(126, 268)"}, {"source": "(80, 455)", "target": "(78, 448)"}, {"source": "(78, 448)", "target": "(74, 356)"}, {"source": "(0, 398)", "target": "(23, 395)"}, {"source": "(23, 395)", "target": "(24, 395)"}, {"source": "(23, 395)", "target": "(24, 394)"}, {"source": "(28, 333)", "target": "(1, 332)"}, {"source": "(28, 333)", "target": "(24, 394)"}, {"source": "(24, 395)", "target": "(24, 394)"}, {"source": "(24, 395)", "target": "(65, 389)"}, {"source": "(75, 355)", "target": "(74, 355)"}, {"source": "(75, 355)", "target": "(74, 356)"}, {"source": "(74, 355)", "target": "(74, 356)"}], "baseline_efficiency": 0.172656, "precomputed_resilience": true};
+const nodeById = {};
+data.nodes.forEach(n => nodeById[n.id] = n);
+
+function colorForCentrality(c, maxC) {
+  const t = maxC > 0 ? c / maxC : 0;
+  const stops = ['#FAECE7', '#F5C4B3', '#F0997B', '#D85A30', '#993C1D'];
+  const idx = Math.min(stops.length - 1, Math.floor(t * (stops.length - 1)));
+  return stops[idx];
+}
+
+const svg = document.getElementById('mapSvg');
+const maxC = Math.max(...data.nodes.map(n => n.centrality), 0.0001);
+
+data.edges.forEach(e => {
+  const a = nodeById[e.source], b = nodeById[e.target];
+  if (!a || !b) return;
+  const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+  line.setAttribute('x1', a.x); line.setAttribute('y1', a.y);
+  line.setAttribute('x2', b.x); line.setAttribute('y2', b.y);
+  line.setAttribute('stroke', '#ccc');
+  line.setAttribute('stroke-width', '1.5');
+  svg.appendChild(line);
+});
+
+data.nodes.forEach(n => {
+  const r = 3 + 10 * (n.centrality / maxC);
+  const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+  circle.setAttribute('cx', n.x);
+  circle.setAttribute('cy', n.y);
+  circle.setAttribute('r', r);
+  circle.setAttribute('fill', colorForCentrality(n.centrality, maxC));
+  circle.setAttribute('stroke', '#333');
+  circle.setAttribute('stroke-width', '0.5');
+  circle.dataset.id = n.id;
+  circle.addEventListener('click', () => selectNode(n.id));
+  svg.appendChild(circle);
+});
+
+function selectNode(id) {
+  const n = nodeById[id];
+  document.getElementById('selNode').textContent = id;
+  document.getElementById('selCentrality').textContent = n.centrality.toFixed(4);
+  if (n.resilience_if_removed === null) {
+    document.getElementById('selResilience').textContent = '(too large to precompute -- use live backend)';
+  } else {
+    const ri = n.resilience_if_removed;
+    document.getElementById('selResilience').textContent = ri.toFixed(4) + (ri < 1 ? ' (efficiency drops)' : ' (negligible)');
+  }
+  svg.querySelectorAll('circle').forEach(c => {
+    c.setAttribute('stroke', c.dataset.id === id ? '#D85A30' : '#333');
+    c.setAttribute('stroke-width', c.dataset.id === id ? '2' : '0.5');
+  });
+}
+
+document.getElementById('resetBtn').addEventListener('click', () => {
+  document.getElementById('selNode').textContent = 'none';
+  document.getElementById('selCentrality').textContent = '-';
+  document.getElementById('selResilience').textContent = '-';
+  svg.querySelectorAll('circle').forEach(c => {
+    c.setAttribute('stroke', '#333');
+    c.setAttribute('stroke-width', '0.5');
+  });
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Route Resilience -- Interactive Criticality Map</title>
+<style>
+  body { font-family: -apple-system, sans-serif; margin: 0; padding: 24px; background: #fafafa; }
+  h1 { font-size: 18px; font-weight: 600; margin: 0 0 4px; }
+  p.sub { font-size: 13px; color: #666; margin: 0 0 20px; }
+  .layout { display: flex; gap: 24px; align-items: flex-start; flex-wrap: wrap; }
+  svg { background: white; border: 1px solid #ddd; border-radius: 8px; }
+  .panel { flex: 1; min-width: 220px; display: flex; flex-direction: column; gap: 10px; }
+  .card { background: white; border: 1px solid #ddd; border-radius: 8px; padding: 12px; }
+  .card .label { font-size: 12px; color: #777; }
+  .card .value { font-size: 20px; font-weight: 600; margin-top: 2px; }
+  button { padding: 8px 14px; border-radius: 6px; border: 1px solid #ccc; background: white; cursor: pointer; }
+  circle { cursor: pointer; }
+</style>
+</head>
+<body>
+  <h1>Intersection Criticality Heatmap</h1>
+  <p class="sub">Click any intersection to see its centrality score and the Resilience Index if it fails.</p>
+  <div class="layout">
+    <svg id="mapSvg" viewBox="-30 -485 570 300" width="500" height="500"></svg>
+    <div class="panel">
+      <div class="card"><div class="label">Selected node</div><div class="value" id="selNode">none</div></div>
+      <div class="card"><div class="label">Centrality score</div><div class="value" id="selCentrality">-</div></div>
+      <div class="card"><div class="label">Resilience index if removed</div><div class="value" id="selResilience">-</div></div>
+      <button id="resetBtn">Reset</button>
+    </div>
+  </div>
+<script>
+const data = {"nodes": [{"id": "(387, 201)", "x": 201, "y": -387, "centrality": 0.107, "resilience_if_removed": 0.9634, "disconnected_if_removed": []}, {"id": "(386, 200)", "x": 200, "y": -386, "centrality": 0.4278, "resilience_if_removed": 0.8246, "disconnected_if_removed": ["(386, 197)", "(215, 0)", "(393, 48)", "(366, 43)", "(394, 49)", "(386, 199)", "(394, 48)", "(385, 198)", "(386, 198)", "(401, 1)"]}, {"id": "(386, 201)", "x": 201, "y": -386, "centrality": 0.3636, "resilience_if_removed": 0.9427, "disconnected_if_removed": []}, {"id": "(455, 348)", "x": 348, "y": -455, "centrality": 0.0998, "resilience_if_removed": 1.0506, "disconnected_if_removed": []}, {"id": "(374, 396)", "x": 396, "y": -374, "centrality": 0.2317, "resilience_if_removed": 0.9456, "disconnected_if_removed": []}, {"id": "(373, 396)", "x": 396, "y": -373, "centrality": 0.0998, "resilience_if_removed": 0.9662, "disconnected_if_removed": []}, {"id": "(374, 395)", "x": 395, "y": -374, "centrality": 0.4011, "resilience_if_removed": 0.9169, "disconnected_if_removed": ["(362, 477)", "(374, 396)", "(369, 421)", "(373, 396)", "(362, 468)", "(318, 394)", "(374, 397)", "(362, 464)", "(310, 394)"]}, {"id": "(374, 397)", "x": 397, "y": -374, "centrality": 0.1996, "resilience_if_removed": 0.9636, "disconnected_if_removed": []}, {"id": "(215, 0)", "x": 0, "y": -215, "centrality": 0.0, "resilience_if_removed": 1.0582, "disconnected_if_removed": []}, {"id": "(385, 198)", "x": 198, "y": -385, "centrality": 0.0588, "resilience_if_removed": 0.9465, "disconnected_if_removed": ["(215, 0)"]}, {"id": "(375, 376)", "x": 376, "y": -375, "centrality": 0.4118, "resilience_if_removed": 0.9416, "disconnected_if_removed": []}, {"id": "(374, 376)", "x": 376, "y": -374, "centrality": 0.0588, "resilience_if_removed": 0.9594, "disconnected_if_removed": ["(309, 378)"]}, {"id": "(375, 375)", "x": 375, "y": -375, "centrality": 0.4991, "resilience_if_removed": 0.9093, "disconnected_if_removed": ["(362, 477)", "(374, 396)", "(375, 377)", "(374, 376)", "(373, 396)", "(369, 421)", "(374, 395)", "(375, 376)", "(362, 468)", "(309, 378)", "(318, 394)", "(374, 397)", "(362, 464)", "(310, 394)"]}, {"id": "(375, 377)", "x": 377, "y": -375, "centrality": 0.4278, "resilience_if_removed": 0.9115, "disconnected_if_removed": ["(362, 477)", "(374, 396)", "(373, 396)", "(369, 421)", "(374, 395)", "(362, 468)", "(318, 394)", "(374, 397)", "(362, 464)", "(310, 394)"]}, {"id": "(386, 199)", "x": 199, "y": -386, "centrality": 0.4011, "resilience_if_removed": 0.8107, "disconnected_if_removed": ["(386, 197)", "(215, 0)", "(393, 48)", "(366, 43)", "(394, 49)", "(394, 48)", "(385, 198)", "(386, 198)", "(401, 1)"]}, {"id": "(386, 198)", "x": 198, "y": -386, "centrality": 0.2781, "resilience_if_removed": 0.9155, "disconnected_if_removed": []}, {"id": "(448, 372)", "x": 372, "y": -448, "centrality": 0.0856, "resilience_if_removed": 0.9949, "disconnected_if_removed": []}, {"id": "(449, 372)", "x": 372, "y": -449, "centrality": 0.0802, "resilience_if_removed": 0.9866, "disconnected_if_removed": []}, {"id": "(449, 373)", "x": 373, "y": -449, "centrality": 0.0588, "resilience_if_removed": 0.9949, "disconnected_if_removed": ["(409, 510)"]}, {"id": "(379, 371)", "x": 371, "y": -379, "centrality": 0.508, "resilience_if_removed": 0.9836, "disconnected_if_removed": ["(362, 477)", "(374, 396)", "(375, 377)", "(374, 376)", "(373, 396)", "(369, 421)", "(374, 395)", "(375, 376)", "(362, 468)", "(375, 375)", "(309, 378)", "(318, 394)", "(374, 397)", "(362, 464)", "(310, 394)"]}, {"id": "(384, 345)", "x": 345, "y": -384, "centrality": 0.3993, "resilience_if_removed": 1.0419, "disconnected_if_removed": []}, {"id": "(401, 1)", "x": 1, "y": -401, "centrality": 0.0, "resilience_if_removed": 1.0556, "disconnected_if_removed": []}, {"id": "(394, 48)", "x": 48, "y": -394, "centrality": 0.0588, "resilience_if_removed": 0.9876, "disconnected_if_removed": ["(401, 1)"]}, {"id": "(362, 464)", "x": 464, "y": -362, "centrality": 0.1141, "resilience_if_removed": 1.0302, "disconnected_if_removed": ["(362, 477)", "(362, 468)"]}, {"id": "(362, 477)", "x": 477, "y": -362, "centrality": 0.0, "resilience_if_removed": 1.0484, "disconnected_if_removed": []}, {"id": "(366, 43)", "x": 43, "y": -366, "centrality": 0.0, "resilience_if_removed": 1.0541, "disconnected_if_removed": []}, {"id": "(386, 197)", "x": 197, "y": -386, "centrality": 0.2585, "resilience_if_removed": 0.946, "disconnected_if_removed": ["(393, 48)", "(366, 43)", "(394, 49)", "(394, 48)", "(401, 1)"]}, {"id": "(318, 394)", "x": 394, "y": -318, "centrality": 0.0588, "resilience_if_removed": 1.0414, "disconnected_if_removed": ["(310, 394)"]}, {"id": "(309, 378)", "x": 378, "y": -309, "centrality": 0.0, "resilience_if_removed": 1.0532, "disconnected_if_removed": []}, {"id": "(409, 510)", "x": 510, "y": -409, "centrality": 0.0, "resilience_if_removed": 1.0569, "disconnected_if_removed": []}, {"id": "(369, 421)", "x": 421, "y": -369, "centrality": 0.1658, "resilience_if_removed": 1.0288, "disconnected_if_removed": ["(362, 477)", "(362, 468)", "(362, 464)"]}, {"id": "(393, 48)", "x": 48, "y": -393, "centrality": 0.0588, "resilience_if_removed": 0.9958, "disconnected_if_removed": ["(366, 43)"]}, {"id": "(394, 49)", "x": 49, "y": -394, "centrality": 0.2139, "resilience_if_removed": 0.9892, "disconnected_if_removed": ["(393, 48)", "(394, 48)", "(401, 1)", "(366, 43)"]}, {"id": "(310, 394)", "x": 394, "y": -310, "centrality": 0.0, "resilience_if_removed": 1.0493, "disconnected_if_removed": []}, {"id": "(362, 468)", "x": 468, "y": -362, "centrality": 0.0441, "resilience_if_removed": 1.0423, "disconnected_if_removed": []}], "edges": [{"source": "(387, 201)", "target": "(386, 200)"}, {"source": "(387, 201)", "target": "(386, 201)"}, {"source": "(387, 201)", "target": "(455, 348)"}, {"source": "(386, 200)", "target": "(386, 199)"}, {"source": "(386, 200)", "target": "(386, 201)"}, {"source": "(386, 201)", "target": "(384, 345)"}, {"source": "(455, 348)", "target": "(449, 372)"}, {"source": "(455, 348)", "target": "(384, 345)"}, {"source": "(374, 396)", "target": "(373, 396)"}, {"source": "(374, 396)", "target": "(374, 395)"}, {"source": "(374, 396)", "target": "(374, 397)"}, {"source": "(373, 396)", "target": "(374, 395)"}, {"source": "(373, 396)", "target": "(374, 397)"}, {"source": "(373, 396)", "target": "(318, 394)"}, {"source": "(374, 395)", "target": "(375, 377)"}, {"source": "(374, 397)", "target": "(369, 421)"}, {"source": "(215, 0)", "target": "(385, 198)"}, {"source": "(385, 198)", "target": "(386, 199)"}, {"source": "(385, 198)", "target": "(386, 198)"}, {"source": "(385, 198)", "target": "(386, 197)"}, {"source": "(375, 376)", "target": "(374, 376)"}, {"source": "(375, 376)", "target": "(375, 375)"}, {"source": "(375, 376)", "target": "(375, 377)"}, {"source": "(374, 376)", "target": "(375, 375)"}, {"source": "(374, 376)", "target": "(309, 378)"}, {"source": "(374, 376)", "target": "(375, 377)"}, {"source": "(375, 375)", "target": "(379, 371)"}, {"source": "(386, 199)", "target": "(386, 198)"}, {"source": "(386, 198)", "target": "(386, 197)"}, {"source": "(448, 372)", "target": "(449, 372)"}, {"source": "(448, 372)", "target": "(449, 373)"}, {"source": "(448, 372)", "target": "(379, 371)"}, {"source": "(449, 372)", "target": "(449, 373)"}, {"source": "(449, 373)", "target": "(409, 510)"}, {"source": "(379, 371)", "target": "(384, 345)"}, {"source": "(401, 1)", "target": "(394, 48)"}, {"source": "(394, 48)", "target": "(393, 48)"}, {"source": "(394, 48)", "target": "(394, 49)"}, {"source": "(362, 464)", "target": "(362, 468)"}, {"source": "(362, 464)", "target": "(369, 421)"}, {"source": "(362, 464)", "target": "(362, 477)"}, {"source": "(362, 477)", "target": "(362, 468)"}, {"source": "(366, 43)", "target": "(393, 48)"}, {"source": "(386, 197)", "target": "(394, 49)"}, {"source": "(318, 394)", "target": "(310, 394)"}, {"source": "(318, 394)", "target": "(369, 421)"}, {"source": "(393, 48)", "target": "(394, 49)"}], "baseline_efficiency": 0.1864, "precomputed_resilience": true};
+const nodeById = {};
+data.nodes.forEach(n => nodeById[n.id] = n);
+
+function colorForCentrality(c, maxC) {
+  const t = maxC > 0 ? c / maxC : 0;
+  const stops = ['#FAECE7', '#F5C4B3', '#F0997B', '#D85A30', '#993C1D'];
+  const idx = Math.min(stops.length - 1, Math.floor(t * (stops.length - 1)));
+  return stops[idx];
+}
+
+const svg = document.getElementById('mapSvg');
+const maxC = Math.max(...data.nodes.map(n => n.centrality), 0.0001);
+
+data.edges.forEach(e => {
+  const a = nodeById[e.source], b = nodeById[e.target];
+  if (!a || !b) return;
+  const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+  line.setAttribute('x1', a.x); line.setAttribute('y1', a.y);
+  line.setAttribute('x2', b.x); line.setAttribute('y2', b.y);
+  line.setAttribute('stroke', '#ccc');
+  line.setAttribute('stroke-width', '1.5');
+  svg.appendChild(line);
+});
+
+data.nodes.forEach(n => {
+  const r = 3 + 10 * (n.centrality / maxC);
+  const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+  circle.setAttribute('cx', n.x);
+  circle.setAttribute('cy', n.y);
+  circle.setAttribute('r', r);
+  circle.setAttribute('fill', colorForCentrality(n.centrality, maxC));
+  circle.setAttribute('stroke', '#333');
+  circle.setAttribute('stroke-width', '0.5');
+  circle.dataset.id = n.id;
+  circle.addEventListener('click', () => selectNode(n.id));
+  svg.appendChild(circle);
+});
+
+function selectNode(id) {
+  const n = nodeById[id];
+  document.getElementById('selNode').textContent = id;
+  document.getElementById('selCentrality').textContent = n.centrality.toFixed(4);
+  if (n.resilience_if_removed === null) {
+    document.getElementById('selResilience').textContent = '(too large to precompute -- use live backend)';
+  } else {
+    const ri = n.resilience_if_removed;
+    document.getElementById('selResilience').textContent = ri.toFixed(4) + (ri < 1 ? ' (efficiency drops)' : ' (negligible)');
+  }
+  svg.querySelectorAll('circle').forEach(c => {
+    c.setAttribute('stroke', c.dataset.id === id ? '#D85A30' : '#333');
+    c.setAttribute('stroke-width', c.dataset.id === id ? '2' : '0.5');
+  });
+}
+
+document.getElementById('resetBtn').addEventListener('click', () => {
+  document.getElementById('selNode').textContent = 'none';
+  document.getElementById('selCentrality').textContent = '-';
+  document.getElementById('selResilience').textContent = '-';
+  svg.querySelectorAll('circle').forEach(c => {
+    c.setAttribute('stroke', '#333');
+    c.setAttribute('stroke-width', '0.5');
+  });
+});
+</script>
+</body>
+</html>

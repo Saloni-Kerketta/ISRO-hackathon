@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Route Resilience -- Interactive Criticality Map</title>
+<style>
+  body { font-family: -apple-system, sans-serif; margin: 0; padding: 24px; background: #fafafa; }
+  h1 { font-size: 18px; font-weight: 600; margin: 0 0 4px; }
+  p.sub { font-size: 13px; color: #666; margin: 0 0 20px; }
+  .layout { display: flex; gap: 24px; align-items: flex-start; flex-wrap: wrap; }
+  svg { background: white; border: 1px solid #ddd; border-radius: 8px; }
+  .panel { flex: 1; min-width: 220px; display: flex; flex-direction: column; gap: 10px; }
+  .card { background: white; border: 1px solid #ddd; border-radius: 8px; padding: 12px; }
+  .card .label { font-size: 12px; color: #777; }
+  .card .value { font-size: 20px; font-weight: 600; margin-top: 2px; }
+  button { padding: 8px 14px; border-radius: 6px; border: 1px solid #ccc; background: white; cursor: pointer; }
+  circle { cursor: pointer; }
+</style>
+</head>
+<body>
+  <h1>Intersection Criticality Heatmap</h1>
+  <p class="sub">Click any intersection to see its centrality score and the Resilience Index if it fails.</p>
+  <div class="layout">
+    <svg id="mapSvg" viewBox="-30 -517 474 517" width="500" height="500"></svg>
+    <div class="panel">
+      <div class="card"><div class="label">Selected node</div><div class="value" id="selNode">none</div></div>
+      <div class="card"><div class="label">Centrality score</div><div class="value" id="selCentrality">-</div></div>
+      <div class="card"><div class="label">Resilience index if removed</div><div class="value" id="selResilience">-</div></div>
+      <button id="resetBtn">Reset</button>
+    </div>
+  </div>
+<script>
+const data = {"nodes": [{"id": "(133, 178)", "x": 178, "y": -133, "centrality": 0.2672, "resilience_if_removed": 0.9958, "disconnected_if_removed": ["(30, 133)", "(121, 113)", "(92, 145)", "(121, 107)", "(282, 16)", "(129, 61)"]}, {"id": "(150, 199)", "x": 199, "y": -150, "centrality": 0.3023, "resilience_if_removed": 0.9787, "disconnected_if_removed": ["(133, 178)", "(121, 113)", "(92, 145)", "(30, 133)", "(121, 107)", "(282, 16)", "(129, 61)"]}, {"id": "(30, 133)", "x": 133, "y": -30, "centrality": 0.0, "resilience_if_removed": 1.0425, "disconnected_if_removed": []}, {"id": "(262, 414)", "x": 414, "y": -262, "centrality": 0.0, "resilience_if_removed": 1.04, "disconnected_if_removed": []}, {"id": "(250, 368)", "x": 368, "y": -250, "centrality": 0.193, "resilience_if_removed": 0.9885, "disconnected_if_removed": ["(262, 414)", "(240, 374)", "(233, 378)", "(237, 374)"]}, {"id": "(350, 246)", "x": 246, "y": -350, "centrality": 0.0, "resilience_if_removed": 1.0398, "disconnected_if_removed": []}, {"id": "(364, 135)", "x": 135, "y": -364, "centrality": 0.4372, "resilience_if_removed": 0.976, "disconnected_if_removed": ["(458, 262)", "(479, 207)", "(459, 257)", "(430, 73)", "(423, 231)", "(431, 61)", "(459, 256)", "(487, 153)", "(431, 80)", "(375, 128)", "(442, 242)", "(372, 129)"]}, {"id": "(442, 242)", "x": 242, "y": -442, "centrality": 0.0513, "resilience_if_removed": 1.0312, "disconnected_if_removed": ["(431, 80)"]}, {"id": "(129, 61)", "x": 61, "y": -129, "centrality": 0.0513, "resilience_if_removed": 1.0367, "disconnected_if_removed": ["(282, 16)"]}, {"id": "(375, 128)", "x": 128, "y": -375, "centrality": 0.3914, "resilience_if_removed": 0.9718, "disconnected_if_removed": ["(458, 262)", "(479, 207)", "(459, 257)", "(430, 73)", "(423, 231)", "(431, 61)", "(459, 256)", "(487, 153)", "(431, 80)", "(442, 242)"]}, {"id": "(430, 73)", "x": 73, "y": -430, "centrality": 0.3752, "resilience_if_removed": 0.9958, "disconnected_if_removed": ["(458, 262)", "(479, 207)", "(459, 257)", "(423, 231)", "(459, 256)", "(487, 153)", "(431, 80)", "(442, 242)", "(431, 61)"]}, {"id": "(282, 16)", "x": 16, "y": -282, "centrality": 0.0, "resilience_if_removed": 1.0472, "disconnected_if_removed": []}, {"id": "(487, 153)", "x": 153, "y": -487, "centrality": 0.0, "resilience_if_removed": 1.0445, "disconnected_if_removed": []}, {"id": "(309, 198)", "x": 198, "y": -309, "centrality": 0.4899, "resilience_if_removed": 0.956, "disconnected_if_removed": ["(350, 246)", "(458, 262)", "(479, 207)", "(459, 257)", "(430, 73)", "(423, 231)", "(364, 135)", "(431, 61)", "(459, 256)", "(487, 153)", "(375, 128)", "(431, 80)", "(442, 242)", "(372, 129)"]}, {"id": "(459, 256)", "x": 256, "y": -459, "centrality": 0.278, "resilience_if_removed": 0.9172, "disconnected_if_removed": ["(431, 80)", "(442, 242)", "(479, 207)", "(487, 153)", "(459, 257)", "(458, 262)"]}, {"id": "(459, 257)", "x": 257, "y": -459, "centrality": 0.1484, "resilience_if_removed": 0.9194, "disconnected_if_removed": ["(479, 207)", "(487, 153)", "(458, 262)"]}, {"id": "(372, 129)", "x": 129, "y": -372, "centrality": 0.0, "resilience_if_removed": 1.0127, "disconnected_if_removed": []}, {"id": "(233, 378)", "x": 378, "y": -233, "centrality": 0.0, "resilience_if_removed": 1.0235, "disconnected_if_removed": []}, {"id": "(237, 374)", "x": 374, "y": -237, "centrality": 0.0, "resilience_if_removed": 1.0068, "disconnected_if_removed": []}, {"id": "(92, 145)", "x": 145, "y": -92, "centrality": 0.2348, "resilience_if_removed": 1.0024, "disconnected_if_removed": ["(30, 133)", "(121, 113)", "(129, 61)", "(121, 107)", "(282, 16)"]}, {"id": "(231, 281)", "x": 281, "y": -231, "centrality": 0.2294, "resilience_if_removed": 0.8687, "disconnected_if_removed": ["(240, 374)", "(262, 414)", "(250, 368)", "(237, 374)", "(233, 378)"]}, {"id": "(230, 280)", "x": 280, "y": -230, "centrality": 0.4372, "resilience_if_removed": 0.8375, "disconnected_if_removed": ["(212, 265)", "(133, 178)", "(92, 145)", "(30, 133)", "(121, 113)", "(121, 107)", "(282, 16)", "(157, 206)", "(160, 211)", "(150, 199)", "(129, 61)", "(183, 233)"]}, {"id": "(231, 280)", "x": 280, "y": -231, "centrality": 0.5128, "resilience_if_removed": 0.8165, "disconnected_if_removed": ["(133, 178)", "(240, 374)", "(262, 414)", "(129, 61)", "(183, 233)", "(282, 16)", "(150, 199)", "(237, 374)", "(212, 265)", "(30, 133)", "(92, 145)", "(230, 280)", "(231, 281)", "(250, 368)", "(121, 107)", "(121, 113)", "(157, 206)", "(160, 211)", "(233, 378)"]}, {"id": "(423, 231)", "x": 231, "y": -423, "centrality": 0.3023, "resilience_if_removed": 1.0097, "disconnected_if_removed": ["(458, 262)", "(479, 207)", "(459, 257)", "(459, 256)", "(487, 153)", "(431, 80)", "(442, 242)"]}, {"id": "(121, 113)", "x": 113, "y": -121, "centrality": 0.1457, "resilience_if_removed": 1.0069, "disconnected_if_removed": ["(129, 61)", "(121, 107)", "(282, 16)"]}, {"id": "(121, 107)", "x": 107, "y": -121, "centrality": 0.0999, "resilience_if_removed": 1.0152, "disconnected_if_removed": ["(129, 61)", "(282, 16)"]}, {"id": "(295, 201)", "x": 201, "y": -295, "centrality": 0.0567, "resilience_if_removed": 0.8065, "disconnected_if_removed": []}, {"id": "(295, 200)", "x": 200, "y": -295, "centrality": 0.0513, "resilience_if_removed": 0.8691, "disconnected_if_removed": ["(361, 0)"]}, {"id": "(295, 202)", "x": 202, "y": -295, "centrality": 0.5128, "resilience_if_removed": 0.8029, "disconnected_if_removed": ["(459, 257)", "(364, 135)", "(350, 246)", "(295, 200)", "(479, 207)", "(459, 256)", "(487, 153)", "(296, 201)", "(375, 128)", "(309, 198)", "(372, 129)", "(430, 73)", "(361, 0)", "(431, 80)", "(442, 242)", "(458, 262)", "(423, 231)", "(295, 201)", "(431, 61)"]}, {"id": "(296, 201)", "x": 201, "y": -296, "centrality": 0.4858, "resilience_if_removed": 0.7811, "disconnected_if_removed": ["(458, 262)", "(479, 207)", "(459, 257)", "(430, 73)", "(423, 231)", "(364, 135)", "(431, 61)", "(459, 256)", "(350, 246)", "(375, 128)", "(431, 80)", "(309, 198)", "(487, 153)", "(442, 242)", "(372, 129)"]}, {"id": "(479, 207)", "x": 207, "y": -479, "centrality": 0.0513, "resilience_if_removed": 1.0347, "disconnected_if_removed": ["(487, 153)"]}, {"id": "(183, 233)", "x": 233, "y": -183, "centrality": 0.3914, "resilience_if_removed": 0.9729, "disconnected_if_removed": ["(133, 178)", "(92, 145)", "(30, 133)", "(121, 113)", "(121, 107)", "(282, 16)", "(157, 206)", "(160, 211)", "(150, 199)", "(129, 61)"]}, {"id": "(160, 211)", "x": 211, "y": -160, "centrality": 0.3644, "resilience_if_removed": 0.9637, "disconnected_if_removed": ["(133, 178)", "(92, 145)", "(30, 133)", "(121, 113)", "(121, 107)", "(282, 16)", "(157, 206)", "(129, 61)", "(150, 199)"]}, {"id": "(361, 0)", "x": 0, "y": -361, "centrality": 0.0, "resilience_if_removed": 1.0463, "disconnected_if_removed": []}, {"id": "(240, 374)", "x": 374, "y": -240, "centrality": 0.1012, "resilience_if_removed": 0.9708, "disconnected_if_removed": ["(237, 374)", "(233, 378)"]}, {"id": "(212, 265)", "x": 265, "y": -212, "centrality": 0.4157, "resilience_if_removed": 0.9647, "disconnected_if_removed": ["(133, 178)", "(92, 145)", "(30, 133)", "(121, 113)", "(121, 107)", "(282, 16)", "(157, 206)", "(160, 211)", "(150, 199)", "(129, 61)", "(183, 233)"]}, {"id": "(431, 80)", "x": 80, "y": -431, "centrality": 0.0, "resilience_if_removed": 1.0473, "disconnected_if_removed": []}, {"id": "(458, 262)", "x": 262, "y": -458, "centrality": 0.0, "resilience_if_removed": 1.017, "disconnected_if_removed": []}, {"id": "(157, 206)", "x": 206, "y": -157, "centrality": 0.1646, "resilience_if_removed": 1.0186, "disconnected_if_removed": []}, {"id": "(431, 61)", "x": 61, "y": -431, "centrality": 0.0, "resilience_if_removed": 1.037, "disconnected_if_removed": []}], "edges": [{"source": "(133, 178)", "target": "(150, 199)"}, {"source": "(133, 178)", "target": "(92, 145)"}, {"source": "(150, 199)", "target": "(157, 206)"}, {"source": "(150, 199)", "target": "(160, 211)"}, {"source": "(30, 133)", "target": "(92, 145)"}, {"source": "(262, 414)", "target": "(250, 368)"}, {"source": "(250, 368)", "target": "(240, 374)"}, {"source": "(250, 368)", "target": "(231, 281)"}, {"source": "(350, 246)", "target": "(309, 198)"}, {"source": "(364, 135)", "target": "(372, 129)"}, {"source": "(364, 135)", "target": "(309, 198)"}, {"source": "(364, 135)", "target": "(375, 128)"}, {"source": "(442, 242)", "target": "(431, 80)"}, {"source": "(442, 242)", "target": "(459, 256)"}, {"source": "(129, 61)", "target": "(282, 16)"}, {"source": "(129, 61)", "target": "(121, 107)"}, {"source": "(375, 128)", "target": "(372, 129)"}, {"source": "(375, 128)", "target": "(430, 73)"}, {"source": "(430, 73)", "target": "(431, 61)"}, {"source": "(430, 73)", "target": "(423, 231)"}, {"source": "(487, 153)", "target": "(479, 207)"}, {"source": "(309, 198)", "target": "(296, 201)"}, {"source": "(459, 256)", "target": "(459, 257)"}, {"source": "(459, 256)", "target": "(423, 231)"}, {"source": "(459, 257)", "target": "(458, 262)"}, {"source": "(459, 257)", "target": "(479, 207)"}, {"source": "(233, 378)", "target": "(240, 374)"}, {"source": "(233, 378)", "target": "(237, 374)"}, {"source": "(237, 374)", "target": "(240, 374)"}, {"source": "(92, 145)", "target": "(121, 113)"}, {"source": "(231, 281)", "target": "(230, 280)"}, {"source": "(231, 281)", "target": "(231, 280)"}, {"source": "(230, 280)", "target": "(231, 280)"}, {"source": "(230, 280)", "target": "(212, 265)"}, {"source": "(231, 280)", "target": "(295, 202)"}, {"source": "(121, 113)", "target": "(121, 107)"}, {"source": "(295, 201)", "target": "(295, 200)"}, {"source": "(295, 201)", "target": "(295, 202)"}, {"source": "(295, 201)", "target": "(296, 201)"}, {"source": "(295, 200)", "target": "(296, 201)"}, {"source": "(295, 200)", "target": "(361, 0)"}, {"source": "(295, 202)", "target": "(296, 201)"}, {"source": "(183, 233)", "target": "(160, 211)"}, {"source": "(183, 233)", "target": "(212, 265)"}, {"source": "(160, 211)", "target": "(157, 206)"}], "baseline_efficiency": 0.061761, "precomputed_resilience": true};
+const nodeById = {};
+data.nodes.forEach(n => nodeById[n.id] = n);
+
+function colorForCentrality(c, maxC) {
+  const t = maxC > 0 ? c / maxC : 0;
+  const stops = ['#FAECE7', '#F5C4B3', '#F0997B', '#D85A30', '#993C1D'];
+  const idx = Math.min(stops.length - 1, Math.floor(t * (stops.length - 1)));
+  return stops[idx];
+}
+
+const svg = document.getElementById('mapSvg');
+const maxC = Math.max(...data.nodes.map(n => n.centrality), 0.0001);
+
+data.edges.forEach(e => {
+  const a = nodeById[e.source], b = nodeById[e.target];
+  if (!a || !b) return;
+  const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+  line.setAttribute('x1', a.x); line.setAttribute('y1', a.y);
+  line.setAttribute('x2', b.x); line.setAttribute('y2', b.y);
+  line.setAttribute('stroke', '#ccc');
+  line.setAttribute('stroke-width', '1.5');
+  svg.appendChild(line);
+});
+
+data.nodes.forEach(n => {
+  const r = 3 + 10 * (n.centrality / maxC);
+  const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+  circle.setAttribute('cx', n.x);
+  circle.setAttribute('cy', n.y);
+  circle.setAttribute('r', r);
+  circle.setAttribute('fill', colorForCentrality(n.centrality, maxC));
+  circle.setAttribute('stroke', '#333');
+  circle.setAttribute('stroke-width', '0.5');
+  circle.dataset.id = n.id;
+  circle.addEventListener('click', () => selectNode(n.id));
+  svg.appendChild(circle);
+});
+
+function selectNode(id) {
+  const n = nodeById[id];
+  document.getElementById('selNode').textContent = id;
+  document.getElementById('selCentrality').textContent = n.centrality.toFixed(4);
+  if (n.resilience_if_removed === null) {
+    document.getElementById('selResilience').textContent = '(too large to precompute -- use live backend)';
+  } else {
+    const ri = n.resilience_if_removed;
+    document.getElementById('selResilience').textContent = ri.toFixed(4) + (ri < 1 ? ' (efficiency drops)' : ' (negligible)');
+  }
+  svg.querySelectorAll('circle').forEach(c => {
+    c.setAttribute('stroke', c.dataset.id === id ? '#D85A30' : '#333');
+    c.setAttribute('stroke-width', c.dataset.id === id ? '2' : '0.5');
+  });
+}
+
+document.getElementById('resetBtn').addEventListener('click', () => {
+  document.getElementById('selNode').textContent = 'none';
+  document.getElementById('selCentrality').textContent = '-';
+  document.getElementById('selResilience').textContent = '-';
+  svg.querySelectorAll('circle').forEach(c => {
+    c.setAttribute('stroke', '#333');
+    c.setAttribute('stroke-width', '0.5');
+  });
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Route Resilience -- Interactive Criticality Map</title>
+<style>
+  body { font-family: -apple-system, sans-serif; margin: 0; padding: 24px; background: #fafafa; }
+  h1 { font-size: 18px; font-weight: 600; margin: 0 0 4px; }
+  p.sub { font-size: 13px; color: #666; margin: 0 0 20px; }
+  .layout { display: flex; gap: 24px; align-items: flex-start; flex-wrap: wrap; }
+  svg { background: white; border: 1px solid #ddd; border-radius: 8px; }
+  .panel { flex: 1; min-width: 220px; display: flex; flex-direction: column; gap: 10px; }
+  .card { background: white; border: 1px solid #ddd; border-radius: 8px; padding: 12px; }
+  .card .label { font-size: 12px; color: #777; }
+  .card .value { font-size: 20px; font-weight: 600; margin-top: 2px; }
+  button { padding: 8px 14px; border-radius: 6px; border: 1px solid #ccc; background: white; cursor: pointer; }
+  circle { cursor: pointer; }
+</style>
+</head>
+<body>
+  <h1>Intersection Criticality Heatmap</h1>
+  <p class="sub">Click any intersection to see its centrality score and the Resilience Index if it fails.</p>
+  <div class="layout">
+    <svg id="mapSvg" viewBox="-14 -381 553 411" width="500" height="500"></svg>
+    <div class="panel">
+      <div class="card"><div class="label">Selected node</div><div class="value" id="selNode">none</div></div>
+      <div class="card"><div class="label">Centrality score</div><div class="value" id="selCentrality">-</div></div>
+      <div class="card"><div class="label">Resilience index if removed</div><div class="value" id="selResilience">-</div></div>
+      <button id="resetBtn">Reset</button>
+    </div>
+  </div>
+<script>
+const data = {"nodes": [{"id": "(121, 340)", "x": 340, "y": -121, "centrality": 0.1174, "resilience_if_removed": 1.0439, "disconnected_if_removed": ["(125, 501)", "(124, 381)"]}, {"id": "(122, 262)", "x": 262, "y": -122, "centrality": 0.2254, "resilience_if_removed": 1.036, "disconnected_if_removed": ["(125, 501)", "(124, 381)", "(121, 340)", "(351, 509)"]}, {"id": "(28, 46)", "x": 46, "y": -28, "centrality": 0.1193, "resilience_if_removed": 0.9933, "disconnected_if_removed": ["(28, 62)", "(0, 40)"]}, {"id": "(28, 62)", "x": 62, "y": -28, "centrality": 0.0, "resilience_if_removed": 1.0379, "disconnected_if_removed": []}, {"id": "(47, 48)", "x": 48, "y": -47, "centrality": 0.1705, "resilience_if_removed": 0.8259, "disconnected_if_removed": ["(0, 40)", "(28, 62)", "(28, 46)"]}, {"id": "(0, 40)", "x": 40, "y": 0, "centrality": 0.0, "resilience_if_removed": 1.043, "disconnected_if_removed": []}, {"id": "(124, 381)", "x": 381, "y": -124, "centrality": 0.0606, "resilience_if_removed": 1.0498, "disconnected_if_removed": ["(125, 501)"]}, {"id": "(21, 141)", "x": 141, "y": -21, "centrality": 0.0, "resilience_if_removed": 1.0457, "disconnected_if_removed": []}, {"id": "(49, 108)", "x": 108, "y": -49, "centrality": 0.5114, "resilience_if_removed": 0.748, "disconnected_if_removed": ["(84, 149)", "(3, 165)", "(81, 184)", "(45, 141)", "(82, 189)", "(21, 141)", "(117, 161)", "(0, 102)", "(121, 125)", "(0, 197)", "(44, 195)", "(57, 108)", "(43, 169)", "(47, 111)", "(80, 201)"]}, {"id": "(48, 107)", "x": 107, "y": -48, "centrality": 0.4356, "resilience_if_removed": 0.7885, "disconnected_if_removed": ["(112, 56)", "(28, 62)", "(28, 46)", "(48, 49)", "(49, 48)", "(73, 16)", "(47, 48)", "(48, 48)", "(0, 40)", "(64, 47)"]}, {"id": "(48, 108)", "x": 108, "y": -48, "centrality": 0.125, "resilience_if_removed": 0.8119, "disconnected_if_removed": []}, {"id": "(48, 109)", "x": 109, "y": -48, "centrality": 0.2652, "resilience_if_removed": 0.8563, "disconnected_if_removed": ["(124, 381)", "(125, 501)", "(122, 262)", "(121, 340)", "(351, 509)"]}, {"id": "(57, 108)", "x": 108, "y": -57, "centrality": 0.5038, "resilience_if_removed": 0.921, "disconnected_if_removed": ["(84, 149)", "(3, 165)", "(81, 184)", "(45, 141)", "(82, 189)", "(21, 141)", "(117, 161)", "(0, 102)", "(121, 125)", "(0, 197)", "(44, 195)", "(43, 169)", "(47, 111)", "(80, 201)"]}, {"id": "(84, 149)", "x": 149, "y": -84, "centrality": 0.5682, "resilience_if_removed": 0.9278, "disconnected_if_removed": ["(45, 141)", "(21, 141)", "(3, 165)", "(81, 184)", "(117, 161)", "(82, 189)", "(121, 125)", "(0, 197)", "(44, 195)", "(43, 169)", "(80, 201)", "(0, 102)", "(47, 111)"]}, {"id": "(82, 189)", "x": 189, "y": -82, "centrality": 0.4072, "resilience_if_removed": 0.9367, "disconnected_if_removed": ["(80, 201)", "(44, 195)", "(0, 197)", "(3, 165)", "(81, 184)", "(117, 161)", "(121, 125)", "(43, 169)"]}, {"id": "(48, 48)", "x": 48, "y": -48, "centrality": 0.0303, "resilience_if_removed": 0.8128, "disconnected_if_removed": []}, {"id": "(48, 49)", "x": 49, "y": -48, "centrality": 0.4091, "resilience_if_removed": 0.7778, "disconnected_if_removed": ["(112, 56)", "(28, 62)", "(28, 46)", "(49, 48)", "(73, 16)", "(47, 48)", "(48, 48)", "(0, 40)", "(64, 47)"]}, {"id": "(49, 48)", "x": 48, "y": -49, "centrality": 0.1705, "resilience_if_removed": 0.8267, "disconnected_if_removed": ["(112, 56)", "(73, 16)", "(64, 47)"]}, {"id": "(73, 16)", "x": 16, "y": -73, "centrality": 0.0, "resilience_if_removed": 1.0433, "disconnected_if_removed": []}, {"id": "(64, 47)", "x": 47, "y": -64, "centrality": 0.1193, "resilience_if_removed": 0.9979, "disconnected_if_removed": ["(73, 16)", "(112, 56)"]}, {"id": "(0, 197)", "x": 197, "y": 0, "centrality": 0.0, "resilience_if_removed": 1.0496, "disconnected_if_removed": []}, {"id": "(3, 165)", "x": 165, "y": -3, "centrality": 0.0, "resilience_if_removed": 1.0493, "disconnected_if_removed": []}, {"id": "(43, 169)", "x": 169, "y": -43, "centrality": 0.0606, "resilience_if_removed": 1.033, "disconnected_if_removed": ["(3, 165)"]}, {"id": "(80, 201)", "x": 201, "y": -80, "centrality": 0.1174, "resilience_if_removed": 1.0098, "disconnected_if_removed": ["(44, 195)", "(0, 197)"]}, {"id": "(0, 102)", "x": 102, "y": 0, "centrality": 0.0, "resilience_if_removed": 1.0503, "disconnected_if_removed": []}, {"id": "(351, 509)", "x": 509, "y": -351, "centrality": 0.0, "resilience_if_removed": 1.0591, "disconnected_if_removed": []}, {"id": "(112, 56)", "x": 56, "y": -112, "centrality": 0.0, "resilience_if_removed": 1.047, "disconnected_if_removed": []}, {"id": "(81, 184)", "x": 184, "y": -81, "centrality": 0.2273, "resilience_if_removed": 0.9778, "disconnected_if_removed": ["(3, 165)", "(43, 169)", "(117, 161)", "(121, 125)"]}, {"id": "(125, 501)", "x": 501, "y": -125, "centrality": 0.0, "resilience_if_removed": 1.0572, "disconnected_if_removed": []}, {"id": "(44, 195)", "x": 195, "y": -44, "centrality": 0.0606, "resilience_if_removed": 1.0334, "disconnected_if_removed": ["(0, 197)"]}, {"id": "(47, 111)", "x": 111, "y": -47, "centrality": 0.0606, "resilience_if_removed": 1.035, "disconnected_if_removed": ["(0, 102)"]}, {"id": "(117, 161)", "x": 161, "y": -117, "centrality": 0.0606, "resilience_if_removed": 1.033, "disconnected_if_removed": ["(121, 125)"]}, {"id": "(121, 125)", "x": 125, "y": -121, "centrality": 0.0, "resilience_if_removed": 1.0489, "disconnected_if_removed": []}, {"id": "(45, 141)", "x": 141, "y": -45, "centrality": 0.0606, "resilience_if_removed": 1.0287, "disconnected_if_removed": ["(21, 141)"]}], "edges": [{"source": "(121, 340)", "target": "(122, 262)"}, {"source": "(121, 340)", "target": "(124, 381)"}, {"source": "(122, 262)", "target": "(48, 109)"}, {"source": "(122, 262)", "target": "(351, 509)"}, {"source": "(28, 46)", "target": "(28, 62)"}, {"source": "(28, 46)", "target": "(47, 48)"}, {"source": "(28, 46)", "target": "(0, 40)"}, {"source": "(47, 48)", "target": "(48, 48)"}, {"source": "(47, 48)", "target": "(48, 49)"}, {"source": "(124, 381)", "target": "(125, 501)"}, {"source": "(21, 141)", "target": "(45, 141)"}, {"source": "(49, 108)", "target": "(48, 107)"}, {"source": "(49, 108)", "target": "(48, 108)"}, {"source": "(49, 108)", "target": "(48, 109)"}, {"source": "(49, 108)", "target": "(57, 108)"}, {"source": "(48, 107)", "target": "(48, 108)"}, {"source": "(48, 107)", "target": "(48, 49)"}, {"source": "(48, 108)", "target": "(48, 109)"}, {"source": "(57, 108)", "target": "(84, 149)"}, {"source": "(84, 149)", "target": "(82, 189)"}, {"source": "(84, 149)", "target": "(45, 141)"}, {"source": "(84, 149)", "target": "(47, 111)"}, {"source": "(82, 189)", "target": "(81, 184)"}, {"source": "(82, 189)", "target": "(80, 201)"}, {"source": "(48, 48)", "target": "(48, 49)"}, {"source": "(48, 48)", "target": "(49, 48)"}, {"source": "(48, 49)", "target": "(49, 48)"}, {"source": "(49, 48)", "target": "(64, 47)"}, {"source": "(73, 16)", "target": "(64, 47)"}, {"source": "(64, 47)", "target": "(112, 56)"}, {"source": "(0, 197)", "target": "(44, 195)"}, {"source": "(3, 165)", "target": "(43, 169)"}, {"source": "(43, 169)", "target": "(81, 184)"}, {"source": "(80, 201)", "target": "(44, 195)"}, {"source": "(0, 102)", "target": "(47, 111)"}, {"source": "(81, 184)", "target": "(117, 161)"}, {"source": "(117, 161)", "target": "(121, 125)"}], "baseline_efficiency": 0.088565, "precomputed_resilience": true};
+const nodeById = {};
+data.nodes.forEach(n => nodeById[n.id] = n);
+
+function colorForCentrality(c, maxC) {
+  const t = maxC > 0 ? c / maxC : 0;
+  const stops = ['#FAECE7', '#F5C4B3', '#F0997B', '#D85A30', '#993C1D'];
+  const idx = Math.min(stops.length - 1, Math.floor(t * (stops.length - 1)));
+  return stops[idx];
+}
+
+const svg = document.getElementById('mapSvg');
+const maxC = Math.max(...data.nodes.map(n => n.centrality), 0.0001);
+
+data.edges.forEach(e => {
+  const a = nodeById[e.source], b = nodeById[e.target];
+  if (!a || !b) return;
+  const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+  line.setAttribute('x1', a.x); line.setAttribute('y1', a.y);
+  line.setAttribute('x2', b.x); line.setAttribute('y2', b.y);
+  line.setAttribute('stroke', '#ccc');
+  line.setAttribute('stroke-width', '1.5');
+  svg.appendChild(line);
+});
+
+data.nodes.forEach(n => {
+  const r = 3 + 10 * (n.centrality / maxC);
+  const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+  circle.setAttribute('cx', n.x);
+  circle.setAttribute('cy', n.y);
+  circle.setAttribute('r', r);
+  circle.setAttribute('fill', colorForCentrality(n.centrality, maxC));
+  circle.setAttribute('stroke', '#333');
+  circle.setAttribute('stroke-width', '0.5');
+  circle.dataset.id = n.id;
+  circle.addEventListener('click', () => selectNode(n.id));
+  svg.appendChild(circle);
+});
+
+function selectNode(id) {
+  const n = nodeById[id];
+  document.getElementById('selNode').textContent = id;
+  document.getElementById('selCentrality').textContent = n.centrality.toFixed(4);
+  if (n.resilience_if_removed === null) {
+    document.getElementById('selResilience').textContent = '(too large to precompute -- use live backend)';
+  } else {
+    const ri = n.resilience_if_removed;
+    document.getElementById('selResilience').textContent = ri.toFixed(4) + (ri < 1 ? ' (efficiency drops)' : ' (negligible)');
+  }
+  svg.querySelectorAll('circle').forEach(c => {
+    c.setAttribute('stroke', c.dataset.id === id ? '#D85A30' : '#333');
+    c.setAttribute('stroke-width', c.dataset.id === id ? '2' : '0.5');
+  });
+}
+
+document.getElementById('resetBtn').addEventListener('click', () => {
+  document.getElementById('selNode').textContent = 'none';
+  document.getElementById('selCentrality').textContent = '-';
+  document.getElementById('selResilience').textContent = '-';
+  svg.querySelectorAll('circle').forEach(c => {
+    c.setAttribute('stroke', '#333');
+    c.setAttribute('stroke-width', '0.5');
+  });
+});
+</script>
+</body>
+</html>

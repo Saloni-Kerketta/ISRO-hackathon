@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Route Resilience -- Interactive Criticality Map</title>
+<style>
+  body { font-family: -apple-system, sans-serif; margin: 0; padding: 24px; background: #fafafa; }
+  h1 { font-size: 18px; font-weight: 600; margin: 0 0 4px; }
+  p.sub { font-size: 13px; color: #666; margin: 0 0 20px; }
+  .layout { display: flex; gap: 24px; align-items: flex-start; flex-wrap: wrap; }
+  svg { background: white; border: 1px solid #ddd; border-radius: 8px; }
+  .panel { flex: 1; min-width: 220px; display: flex; flex-direction: column; gap: 10px; }
+  .card { background: white; border: 1px solid #ddd; border-radius: 8px; padding: 12px; }
+  .card .label { font-size: 12px; color: #777; }
+  .card .value { font-size: 20px; font-weight: 600; margin-top: 2px; }
+  button { padding: 8px 14px; border-radius: 6px; border: 1px solid #ccc; background: white; cursor: pointer; }
+  circle { cursor: pointer; }
+</style>
+</head>
+<body>
+  <h1>Intersection Criticality Heatmap</h1>
+  <p class="sub">Click any intersection to see its centrality score and the Resilience Index if it fails.</p>
+  <div class="layout">
+    <svg id="mapSvg" viewBox="-18 -541 559 570" width="500" height="500"></svg>
+    <div class="panel">
+      <div class="card"><div class="label">Selected node</div><div class="value" id="selNode">none</div></div>
+      <div class="card"><div class="label">Centrality score</div><div class="value" id="selCentrality">-</div></div>
+      <div class="card"><div class="label">Resilience index if removed</div><div class="value" id="selResilience">-</div></div>
+      <button id="resetBtn">Reset</button>
+    </div>
+  </div>
+<script>
+const data = {"nodes": [{"id": "(421, 511)", "x": 511, "y": -421, "centrality": 0.0, "resilience_if_removed": 1.0551, "disconnected_if_removed": []}, {"id": "(441, 359)", "x": 359, "y": -441, "centrality": 0.0588, "resilience_if_removed": 0.8979, "disconnected_if_removed": ["(421, 511)"]}, {"id": "(424, 354)", "x": 354, "y": -424, "centrality": 0.508, "resilience_if_removed": 0.9753, "disconnected_if_removed": ["(433, 354)", "(448, 358)", "(421, 511)", "(437, 355)", "(429, 354)", "(436, 354)", "(437, 354)", "(511, 12)", "(437, 353)", "(506, 346)", "(441, 359)", "(442, 358)", "(440, 358)", "(507, 323)", "(441, 358)"]}, {"id": "(433, 354)", "x": 354, "y": -433, "centrality": 0.4866, "resilience_if_removed": 0.8699, "disconnected_if_removed": ["(448, 358)", "(421, 511)", "(437, 355)", "(436, 354)", "(437, 354)", "(511, 12)", "(437, 353)", "(506, 346)", "(441, 359)", "(442, 358)", "(440, 358)", "(507, 323)", "(441, 358)"]}, {"id": "(302, 320)", "x": 320, "y": -302, "centrality": 0.6417, "resilience_if_removed": 0.9982, "disconnected_if_removed": ["(275, 286)", "(43, 129)", "(177, 221)", "(246, 259)", "(174, 221)", "(187, 226)", "(229, 450)", "(225, 454)", "(222, 385)", "(229, 331)", "(229, 446)", "(228, 331)", "(217, 467)", "(1, 270)", "(229, 332)", "(233, 410)", "(221, 397)", "(229, 364)"]}, {"id": "(429, 354)", "x": 354, "y": -429, "centrality": 0.2166, "resilience_if_removed": 0.9973, "disconnected_if_removed": []}, {"id": "(275, 286)", "x": 286, "y": -275, "centrality": 0.2585, "resilience_if_removed": 1.0304, "disconnected_if_removed": ["(43, 129)", "(177, 221)", "(246, 259)", "(174, 221)", "(187, 226)"]}, {"id": "(437, 354)", "x": 354, "y": -437, "centrality": 0.0321, "resilience_if_removed": 0.8577, "disconnected_if_removed": []}, {"id": "(436, 354)", "x": 354, "y": -436, "centrality": 0.4706, "resilience_if_removed": 0.7479, "disconnected_if_removed": ["(448, 358)", "(421, 511)", "(437, 355)", "(437, 354)", "(511, 12)", "(437, 353)", "(506, 346)", "(441, 359)", "(442, 358)", "(440, 358)", "(507, 323)", "(441, 358)"]}, {"id": "(437, 353)", "x": 353, "y": -437, "centrality": 0.0588, "resilience_if_removed": 0.906, "disconnected_if_removed": ["(511, 12)"]}, {"id": "(437, 355)", "x": 355, "y": -437, "centrality": 0.3708, "resilience_if_removed": 0.7292, "disconnected_if_removed": ["(448, 358)", "(421, 511)", "(506, 346)", "(441, 359)", "(442, 358)", "(440, 358)", "(507, 323)", "(441, 358)"]}, {"id": "(246, 259)", "x": 259, "y": -246, "centrality": 0.2139, "resilience_if_removed": 1.0358, "disconnected_if_removed": ["(174, 221)", "(177, 221)", "(43, 129)", "(187, 226)"]}, {"id": "(217, 467)", "x": 467, "y": -217, "centrality": 0.0, "resilience_if_removed": 1.0483, "disconnected_if_removed": []}, {"id": "(225, 454)", "x": 454, "y": -225, "centrality": 0.0588, "resilience_if_removed": 1.0289, "disconnected_if_removed": ["(217, 467)"]}, {"id": "(221, 397)", "x": 397, "y": -221, "centrality": 0.2585, "resilience_if_removed": 1.0172, "disconnected_if_removed": ["(229, 450)", "(225, 454)", "(229, 446)", "(217, 467)", "(233, 410)"]}, {"id": "(222, 385)", "x": 385, "y": -222, "centrality": 0.2995, "resilience_if_removed": 1.0143, "disconnected_if_removed": ["(229, 450)", "(225, 454)", "(229, 446)", "(217, 467)", "(233, 410)", "(221, 397)"]}, {"id": "(229, 446)", "x": 446, "y": -229, "centrality": 0.1658, "resilience_if_removed": 1.0159, "disconnected_if_removed": ["(229, 450)", "(225, 454)", "(217, 467)"]}, {"id": "(229, 450)", "x": 450, "y": -229, "centrality": 0.1141, "resilience_if_removed": 1.0305, "disconnected_if_removed": []}, {"id": "(229, 331)", "x": 331, "y": -229, "centrality": 0.451, "resilience_if_removed": 0.9231, "disconnected_if_removed": ["(229, 450)", "(225, 454)", "(222, 385)", "(229, 446)", "(228, 331)", "(217, 467)", "(1, 270)", "(229, 332)", "(233, 410)", "(221, 397)", "(229, 364)"]}, {"id": "(228, 331)", "x": 331, "y": -228, "centrality": 0.0588, "resilience_if_removed": 0.9701, "disconnected_if_removed": ["(1, 270)"]}, {"id": "(229, 332)", "x": 332, "y": -229, "centrality": 0.3708, "resilience_if_removed": 0.9375, "disconnected_if_removed": ["(229, 450)", "(225, 454)", "(222, 385)", "(229, 446)", "(217, 467)", "(233, 410)", "(221, 397)", "(229, 364)"]}, {"id": "(187, 226)", "x": 226, "y": -187, "centrality": 0.1658, "resilience_if_removed": 1.0352, "disconnected_if_removed": ["(174, 221)", "(177, 221)", "(43, 129)"]}, {"id": "(506, 346)", "x": 346, "y": -506, "centrality": 0.0588, "resilience_if_removed": 1.0404, "disconnected_if_removed": ["(507, 323)"]}, {"id": "(507, 323)", "x": 323, "y": -507, "centrality": 0.0, "resilience_if_removed": 1.0508, "disconnected_if_removed": []}, {"id": "(511, 12)", "x": 12, "y": -511, "centrality": 0.0, "resilience_if_removed": 1.0577, "disconnected_if_removed": []}, {"id": "(233, 410)", "x": 410, "y": -233, "centrality": 0.2139, "resilience_if_removed": 1.0237, "disconnected_if_removed": ["(229, 450)", "(225, 454)", "(229, 446)", "(217, 467)"]}, {"id": "(440, 358)", "x": 358, "y": -440, "centrality": 0.3369, "resilience_if_removed": 0.7444, "disconnected_if_removed": ["(448, 358)", "(421, 511)", "(506, 346)", "(441, 359)", "(442, 358)", "(507, 323)", "(441, 358)"]}, {"id": "(441, 358)", "x": 358, "y": -441, "centrality": 0.1996, "resilience_if_removed": 0.8625, "disconnected_if_removed": []}, {"id": "(229, 364)", "x": 364, "y": -229, "centrality": 0.3369, "resilience_if_removed": 1.0138, "disconnected_if_removed": ["(229, 450)", "(225, 454)", "(222, 385)", "(229, 446)", "(217, 467)", "(233, 410)", "(221, 397)"]}, {"id": "(1, 270)", "x": 270, "y": -1, "centrality": 0.0, "resilience_if_removed": 1.0569, "disconnected_if_removed": []}, {"id": "(174, 221)", "x": 221, "y": -174, "centrality": 0.0588, "resilience_if_removed": 1.0338, "disconnected_if_removed": ["(43, 129)"]}, {"id": "(442, 358)", "x": 358, "y": -442, "centrality": 0.1658, "resilience_if_removed": 0.8559, "disconnected_if_removed": ["(448, 358)", "(506, 346)", "(507, 323)"]}, {"id": "(448, 358)", "x": 358, "y": -448, "centrality": 0.1141, "resilience_if_removed": 0.9927, "disconnected_if_removed": ["(506, 346)", "(507, 323)"]}, {"id": "(177, 221)", "x": 221, "y": -177, "centrality": 0.1141, "resilience_if_removed": 1.0361, "disconnected_if_removed": []}, {"id": "(43, 129)", "x": 129, "y": -43, "centrality": 0.0, "resilience_if_removed": 1.0571, "disconnected_if_removed": []}], "edges": [{"source": "(421, 511)", "target": "(441, 359)"}, {"source": "(441, 359)", "target": "(440, 358)"}, {"source": "(441, 359)", "target": "(441, 358)"}, {"source": "(441, 359)", "target": "(442, 358)"}, {"source": "(424, 354)", "target": "(433, 354)"}, {"source": "(424, 354)", "target": "(302, 320)"}, {"source": "(424, 354)", "target": "(429, 354)"}, {"source": "(433, 354)", "target": "(436, 354)"}, {"source": "(433, 354)", "target": "(429, 354)"}, {"source": "(302, 320)", "target": "(229, 331)"}, {"source": "(302, 320)", "target": "(275, 286)"}, {"source": "(275, 286)", "target": "(246, 259)"}, {"source": "(437, 354)", "target": "(436, 354)"}, {"source": "(437, 354)", "target": "(437, 353)"}, {"source": "(437, 354)", "target": "(437, 355)"}, {"source": "(436, 354)", "target": "(437, 353)"}, {"source": "(436, 354)", "target": "(437, 355)"}, {"source": "(437, 353)", "target": "(511, 12)"}, {"source": "(437, 355)", "target": "(440, 358)"}, {"source": "(246, 259)", "target": "(187, 226)"}, {"source": "(217, 467)", "target": "(225, 454)"}, {"source": "(225, 454)", "target": "(229, 450)"}, {"source": "(225, 454)", "target": "(229, 446)"}, {"source": "(221, 397)", "target": "(222, 385)"}, {"source": "(221, 397)", "target": "(233, 410)"}, {"source": "(222, 385)", "target": "(229, 364)"}, {"source": "(229, 446)", "target": "(229, 450)"}, {"source": "(229, 446)", "target": "(233, 410)"}, {"source": "(229, 331)", "target": "(228, 331)"}, {"source": "(229, 331)", "target": "(229, 332)"}, {"source": "(228, 331)", "target": "(229, 332)"}, {"source": "(228, 331)", "target": "(1, 270)"}, {"source": "(229, 332)", "target": "(229, 364)"}, {"source": "(187, 226)", "target": "(177, 221)"}, {"source": "(187, 226)", "target": "(174, 221)"}, {"source": "(506, 346)", "target": "(507, 323)"}, {"source": "(506, 346)", "target": "(448, 358)"}, {"source": "(440, 358)", "target": "(441, 358)"}, {"source": "(441, 358)", "target": "(442, 358)"}, {"source": "(174, 221)", "target": "(43, 129)"}, {"source": "(174, 221)", "target": "(177, 221)"}, {"source": "(442, 358)", "target": "(448, 358)"}], "baseline_efficiency": 0.130991, "precomputed_resilience": true};
+const nodeById = {};
+data.nodes.forEach(n => nodeById[n.id] = n);
+
+function colorForCentrality(c, maxC) {
+  const t = maxC > 0 ? c / maxC : 0;
+  const stops = ['#FAECE7', '#F5C4B3', '#F0997B', '#D85A30', '#993C1D'];
+  const idx = Math.min(stops.length - 1, Math.floor(t * (stops.length - 1)));
+  return stops[idx];
+}
+
+const svg = document.getElementById('mapSvg');
+const maxC = Math.max(...data.nodes.map(n => n.centrality), 0.0001);
+
+data.edges.forEach(e => {
+  const a = nodeById[e.source], b = nodeById[e.target];
+  if (!a || !b) return;
+  const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+  line.setAttribute('x1', a.x); line.setAttribute('y1', a.y);
+  line.setAttribute('x2', b.x); line.setAttribute('y2', b.y);
+  line.setAttribute('stroke', '#ccc');
+  line.setAttribute('stroke-width', '1.5');
+  svg.appendChild(line);
+});
+
+data.nodes.forEach(n => {
+  const r = 3 + 10 * (n.centrality / maxC);
+  const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+  circle.setAttribute('cx', n.x);
+  circle.setAttribute('cy', n.y);
+  circle.setAttribute('r', r);
+  circle.setAttribute('fill', colorForCentrality(n.centrality, maxC));
+  circle.setAttribute('stroke', '#333');
+  circle.setAttribute('stroke-width', '0.5');
+  circle.dataset.id = n.id;
+  circle.addEventListener('click', () => selectNode(n.id));
+  svg.appendChild(circle);
+});
+
+function selectNode(id) {
+  const n = nodeById[id];
+  document.getElementById('selNode').textContent = id;
+  document.getElementById('selCentrality').textContent = n.centrality.toFixed(4);
+  if (n.resilience_if_removed === null) {
+    document.getElementById('selResilience').textContent = '(too large to precompute -- use live backend)';
+  } else {
+    const ri = n.resilience_if_removed;
+    document.getElementById('selResilience').textContent = ri.toFixed(4) + (ri < 1 ? ' (efficiency drops)' : ' (negligible)');
+  }
+  svg.querySelectorAll('circle').forEach(c => {
+    c.setAttribute('stroke', c.dataset.id === id ? '#D85A30' : '#333');
+    c.setAttribute('stroke-width', c.dataset.id === id ? '2' : '0.5');
+  });
+}
+
+document.getElementById('resetBtn').addEventListener('click', () => {
+  document.getElementById('selNode').textContent = 'none';
+  document.getElementById('selCentrality').textContent = '-';
+  document.getElementById('selResilience').textContent = '-';
+  svg.querySelectorAll('circle').forEach(c => {
+    c.setAttribute('stroke', '#333');
+    c.setAttribute('stroke-width', '0.5');
+  });
+});
+</script>
+</body>
+</html>
